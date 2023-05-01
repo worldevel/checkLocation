@@ -62,7 +62,7 @@ def CheckLocationRegualarly():
         messagebox.showwarning("Alert", "Your Location is changed\n All your adapters are disabled")
         status_text.set("You are dangerous")
 
-    threading.Timer(CHECK_INTERVAL, CheckLocationRegualarly).start()
+    # threading.Timer(CHECK_INTERVAL, CheckLocationRegualarly).start()
 
 # start the timer event
 def StartChecking():
