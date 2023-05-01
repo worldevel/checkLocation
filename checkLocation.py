@@ -2,10 +2,22 @@ import tkinter as tk
 import subprocess
 import json
 import threading
+import wmi
+import sys
+import pythoncom
+
+from tkinter import messagebox
+
 from typing import final
 
 CHECK_INTERVAL: final = 1
 NETWORK_ERROR: final = 10
+
+if sys.platform == "win32":
+    import ctypes
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("checkLocationTask")
+    ctypes.windll.kernel32.SetDllDirectoryW(None)
+    ctypes.windll.shell32.IsUserAnAdmin()
 
 def checkLocation(TargetCity):
 
@@ -37,13 +49,17 @@ def CheckLocationRegualarly():
     
     response = checkLocation(TargetCity);
     if response == NETWORK_ERROR:
-        status_label.config(foreground="black", justify="center")
         status_text.set("Network Error")
-    elif response == True:
         status_label.config(foreground="black", justify="center")
+        root.after(CHECK_INTERVAL*1000, CheckLocationRegualarly)
+    elif response == True:
         status_text.set("Ok")
+        status_label.config(foreground="black", justify="center")
+        root.after(CHECK_INTERVAL*1000, CheckLocationRegualarly)
     else :
         status_label.config(foreground="red", justify="center")
+        disable_network_adapters()
+        messagebox.showwarning("Alert", "Your Location is changed\n All your adapters are disabled")
         status_text.set("You are dangerous")
 
     threading.Timer(CHECK_INTERVAL, CheckLocationRegualarly).start()
@@ -52,7 +68,11 @@ def CheckLocationRegualarly():
 def StartChecking():
     global continue_checking   # use the global flag
     continue_checking = True
-    CheckLocationRegualarly()
+    try:
+        CheckLocationRegualarly()
+    except KeyboardInterrupt:
+        StopChecking()
+        root.quit()
 
 def StopChecking():
     global continue_checking   # use the global flag
@@ -63,6 +83,31 @@ def StopChecking():
     City.config(state=tk.NORMAL)
     status_label.config(foreground="black", justify="center")
     status_text.set("Checking stopped")
+
+def disable_network_adapters():
+    adapters = get_network_adapter_names()
+    for adapter in adapters:
+        print(adapter)
+        cmd = ['netsh', 'interface', 'set', 'interface', adapter, 'disable']
+        try:
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
+                print("Network adapter disabled successfully")
+            else:
+                print(f"Failed to disable network adapter: {result.stderr.decode('utf-8')}")
+        except KeyboardInterrupt:
+            StopChecking()
+            root.quit()
+
+
+def get_network_adapter_names():
+    adapters = []
+    pythoncom.CoInitialize()  # initialize pythoncom
+    c = wmi.WMI()
+    for adapter in c.Win32_NetworkAdapter():
+        if adapter.NetConnectionID:
+            adapters.append(adapter.NetConnectionID)
+    return adapters
 
 root = tk.Tk()
 
@@ -79,4 +124,7 @@ status_text = tk.StringVar()
 status_label = tk.Label(root, textvariable=status_text)
 status_label.pack()
 
-root.mainloop()
+try:
+    root.mainloop()
+except KeyboardInterrupt:
+    pass
