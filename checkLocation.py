@@ -1,13 +1,12 @@
 import tkinter as tk
-import time as tm
 import subprocess
 import json
+import threading
 from typing import final
 
-GREEN = '\033[32m'
-RESET = '\033[0m'
-
 CHECK_INTERVAL: final = 1
+NETWORK_ERROR: final = 10
+
 def checkLocation(TargetCity):
 
     curl_cmd = ['curl', 'ipinfo.io']
@@ -24,33 +23,60 @@ def checkLocation(TargetCity):
             return False
     else:
         # print(f"Command failed with return code {response.returncode}")
-        return False
+        return NETWORK_ERROR
     
 def CheckLocationRegualarly():
+    StartButton.config(state=tk.DISABLED)
+    City.config(state=tk.DISABLED)
     TargetCity = City.get()
-    while True:
-        tm.sleep(CHECK_INTERVAL)
-        if checkLocation(TargetCity):
-            status_label.config(foreground="black", justify="center")
-            status_text.set("Ok")
-        else :
-            status_label.config(foreground="red", justify="center")
-            status_text.set("You are dangerous")
+
+    if not continue_checking:   # check if the function should exit
+        StartButton.config(state=tk.NORMAL)
+        City.config(state=tk.NORMAL)
+        return
+    
+    response = checkLocation(TargetCity);
+    if response == NETWORK_ERROR:
+        status_label.config(foreground="black", justify="center")
+        status_text.set("Network Error")
+    elif response == True:
+        status_label.config(foreground="black", justify="center")
+        status_text.set("Ok")
+    else :
+        status_label.config(foreground="red", justify="center")
+        status_text.set("You are dangerous")
+
+    threading.Timer(CHECK_INTERVAL, CheckLocationRegualarly).start()
+
+# start the timer event
+def StartChecking():
+    global continue_checking   # use the global flag
+    continue_checking = True
+    CheckLocationRegualarly()
+
+def StopChecking():
+    global continue_checking   # use the global flag
+    continue_checking = False
+
+    # re-enable the input fields and update the status text
+    StartButton.config(state=tk.NORMAL)
+    City.config(state=tk.NORMAL)
+    status_label.config(foreground="black", justify="center")
+    status_text.set("Checking stopped")
 
 root = tk.Tk()
 
-StartButton = tk.Button(root, text="My Location must be ", command=CheckLocationRegualarly)
+StartButton = tk.Button(root, text="My Location must be", command=StartChecking)
 StartButton.pack()
 
 City = tk.Entry(root, width=30)
 City.pack()
 
+StopButton = tk.Button(root, text="Stop", command=StopChecking)
+StopButton.pack()
 
 status_text = tk.StringVar()
 status_label = tk.Label(root, textvariable=status_text)
 status_label.pack()
-
-status_text.set("You are dangerous")
-
 
 root.mainloop()
