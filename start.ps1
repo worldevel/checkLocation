@@ -1,0 +1,1 @@
+    Start-Process py.exe .\checkLocation.py -Verb RunAs
