@@ -21,7 +21,7 @@ if sys.platform == "win32":
 
 def checkLocation(TargetCity):
 
-    curl_cmd = ['curl', 'ipinfo.io']
+    curl_cmd = ['curl', 'ipinfo.io/?token=fcb064a28593f2']
     response = subprocess.run(curl_cmd, stdout=subprocess.PIPE)
 
     if response.returncode == 0:
