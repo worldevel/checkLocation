@@ -19,7 +19,7 @@ if sys.platform == "win32":
     ctypes.windll.kernel32.SetDllDirectoryW(None)
     ctypes.windll.shell32.IsUserAnAdmin()
 
-def checkLocation(TargetCity):
+def checkLocation(TargetIp):
 
     curl_cmd = ['curl', 'ipinfo.io/?token=fcb064a28593f2']
     response = subprocess.run(curl_cmd, stdout=subprocess.PIPE)
@@ -27,9 +27,8 @@ def checkLocation(TargetCity):
     if response.returncode == 0:
         # print("Command ran successfully!")
         response_json = json.loads(response.stdout)
-        CurrentCity = response_json["city"]
-
-        if CurrentCity == TargetCity:
+        CurrentIp = response_json["ip"]
+        if CurrentIp == TargetIp:
             return True
         else:
             return False
@@ -40,14 +39,14 @@ def checkLocation(TargetCity):
 def CheckLocationRegualarly():
     StartButton.config(state=tk.DISABLED)
     City.config(state=tk.DISABLED)
-    TargetCity = City.get()
+    TargetIp = City.get()
 
     if not continue_checking:   # check if the function should exit
         StartButton.config(state=tk.NORMAL)
         City.config(state=tk.NORMAL)
         return
     
-    response = checkLocation(TargetCity);
+    response = checkLocation(TargetIp);
     if response == NETWORK_ERROR:
         status_text.set("Network Error")
         status_label.config(foreground="black", justify="center")
@@ -59,7 +58,7 @@ def CheckLocationRegualarly():
     else :
         status_label.config(foreground="red", justify="center")
         disable_network_adapters()
-        messagebox.showwarning("Alert", "Your Location is changed\n All your adapters are disabled")
+        messagebox.showwarning("Alert", "Your IP address is changed\n All your adapters are disabled")
         status_text.set("You are dangerous")
 
     # threading.Timer(CHECK_INTERVAL, CheckLocationRegualarly).start()
@@ -111,7 +110,7 @@ def get_network_adapter_names():
 
 root = tk.Tk()
 
-StartButton = tk.Button(root, text="My Location must be", command=StartChecking)
+StartButton = tk.Button(root, text="My Public IP address must be", command=StartChecking)
 StartButton.pack()
 
 City = tk.Entry(root, width=30)

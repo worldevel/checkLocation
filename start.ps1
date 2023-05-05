@@ -1,1 +1,1 @@
-Start-Process py.exe E:\python\checkLocation.py -Verb RunAs
+Start-Process py.exe E:\projects\python\checkLocation.py -Verb RunAs
